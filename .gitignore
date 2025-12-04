@@ -1,0 +1,28 @@
+# OS Junk
+.DS_Store
+Thumbs.db
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# IDE - VS Code
+.vscode/
+
+# Maven / Java Build
+target/
+mvnw
+mvnw.cmd
+.mvn/
+
+# Node / Next.js (For later)
+node_modules/
+.next/
+dist/
+coverage/
+.env.local
+
+.env

@@ -23,6 +23,21 @@ services:
     networks:
       - sc_network
 
+  ingestion-service:
+    platform: linux/amd64
+    build:
+      context: ./ingestion-service
+      dockerfile: Dockerfile
+    container_name: sc_ingestion
+    ports:
+      - "8081:8081"
+    environment:
+      - INGESTION_PORT=8081
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_INDEX_HOST=${PINECONE_INDEX_HOST}
+    networks:
+      - sc_network
+
 volumes:
   postgres_data:
 

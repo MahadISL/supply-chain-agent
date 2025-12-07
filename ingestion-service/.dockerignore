@@ -1,0 +1,8 @@
+.idea/
+main
+main.exe
+*.exe
+*.test
+*.out
+bin/
+build/

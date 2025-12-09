@@ -35,6 +35,7 @@ services:
       - INGESTION_PORT=8081
       - PINECONE_API_KEY=${PINECONE_API_KEY}
       - PINECONE_INDEX_HOST=${PINECONE_INDEX_HOST}
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
     networks:
       - sc_network
 

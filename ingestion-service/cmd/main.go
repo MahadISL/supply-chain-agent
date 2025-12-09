@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"ingestive-service/config"
+	"ingestive-service/internal/ai"
 	"ingestive-service/internal/processor"
+	"ingestive-service/internal/store"
 	"io"
 	"log"
 	"net/http"
@@ -13,7 +15,10 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
+
 	pdfProc := processor.NewPDFProcessor()
+	aiClient := ai.NewClient(cfg.HFToken)
+	dbClient := store.NewPineconeClient(cfg.PineconeAPIKey, cfg.PineconeHost)
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -26,7 +31,7 @@ func main() {
 			return
 		}
 
-		// A. Parse Multipart Form (10MB limit)
+		// Receive File
 		r.ParseMultipartForm(10 << 20)
 		file, header, err := r.FormFile("file")
 		if err != nil {
@@ -35,27 +40,45 @@ func main() {
 		}
 		defer file.Close()
 
-		log.Printf("Received file: %s", header.Filename)
+		log.Printf("Processing file: %s", header.Filename)
 
-		fileBytes, err := io.ReadAll(file)
+		// Extract Text
+		fileBytes, _ := io.ReadAll(file)
+		chunks, err := pdfProc.Process(bytes.NewReader(fileBytes), int64(len(fileBytes)))
 		if err != nil {
-			http.Error(w, "Error reading file", http.StatusInternalServerError)
+			http.Error(w, "PDF Processing failed", http.StatusInternalServerError)
 			return
 		}
-		fileReader := bytes.NewReader(fileBytes)
 
-		chunks, err := pdfProc.Process(fileReader, int64(len(fileBytes)))
+		// Generate Embeddings
+		var texts []string
+		for _, c := range chunks {
+			texts = append(texts, c.Text)
+		}
+
+		embeddings, err := aiClient.GenerateEmbeddings(texts)
 		if err != nil {
-			log.Printf("Processing failed: %v", err)
-			http.Error(w, "Failed to process PDF", http.StatusInternalServerError)
+			log.Printf("Embedding failed: %v", err)
+			http.Error(w, "AI Embedding failed", http.StatusInternalServerError)
 			return
 		}
-		
+
+		// Store in Pinecone
+		err = dbClient.Upsert(chunks, embeddings, header.Filename)
+		if err != nil {
+			log.Printf("Pinecone Upsert failed: %v", err)
+			http.Error(w, "Database storage failed", http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Successfully ingested %s with %d chunks", header.Filename, len(chunks))
+
+		// Success Response
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"filename": header.Filename,
-			"chunks":   len(chunks),
-			"data":     chunks, // Returning data so we can verify it works
+			"status":           "success",
+			"filename":         header.Filename,
+			"chunks_processed": len(chunks),
 		})
 	})
 

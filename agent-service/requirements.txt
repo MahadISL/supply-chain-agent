@@ -1,0 +1,12 @@
+fastapi==0.109.0
+uvicorn==0.27.0
+python-dotenv==1.0.1
+# The Agentic Stack
+langchain==0.1.0
+langchain-groq==0.0.1
+langgraph==0.0.15
+langchain-community==0.0.13
+pinecone-client==3.0.0
+# For HTTP requests to Java
+requests==2.31.0
+pydantic==2.6.0

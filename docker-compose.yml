@@ -23,8 +23,26 @@ services:
     networks:
       - sc_network
 
+  # 3. The Core Backend (Java) - NEW
+  core-service:
+    build: ./core-service
+    container_name: sc_core
+    ports:
+      - "8080:8080"
+    environment:
+      # Override localhost with service names
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - sc_network
+
+  # 4. Ingestion Service (Go)
   ingestion-service:
-    platform: linux/amd64
     build:
       context: ./ingestion-service
       dockerfile: Dockerfile
@@ -36,6 +54,25 @@ services:
       - PINECONE_API_KEY=${PINECONE_API_KEY}
       - PINECONE_INDEX_HOST=${PINECONE_INDEX_HOST}
       - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+    networks:
+      - sc_network
+
+  # 5. Agent Service (Python)
+  agent-service:
+    build: ./agent-service
+    container_name: sc_agent
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_INDEX_HOST=${PINECONE_INDEX_HOST}
+      # Now it can find the core service by name
+      - JAVA_SERVICE_URL=http://core-service:8080/api
+    depends_on:
+      - postgres
+      - redis
+      - core-service
     networks:
       - sc_network
 

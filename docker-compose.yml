@@ -1,5 +1,4 @@
 services:
-  # 1. The Relational Database
   postgres:
     image: postgres:15-alpine
     container_name: sc_postgres
@@ -14,7 +13,6 @@ services:
     networks:
       - sc_network
 
-  # 2. The Cache Layer
   redis:
     image: redis:7-alpine
     container_name: sc_redis
@@ -23,14 +21,12 @@ services:
     networks:
       - sc_network
 
-  # 3. The Core Backend (Java) - NEW
   core-service:
     build: ./core-service
     container_name: sc_core
     ports:
       - "8080:8080"
     environment:
-      # Override localhost with service names
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${DB_NAME}
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
@@ -41,7 +37,6 @@ services:
     networks:
       - sc_network
 
-  # 4. Ingestion Service (Go)
   ingestion-service:
     build:
       context: ./ingestion-service
@@ -57,7 +52,6 @@ services:
     networks:
       - sc_network
 
-  # 5. Agent Service (Python)
   agent-service:
     build: ./agent-service
     container_name: sc_agent
@@ -67,8 +61,8 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - PINECONE_API_KEY=${PINECONE_API_KEY}
       - PINECONE_INDEX_HOST=${PINECONE_INDEX_HOST}
-      # Now it can find the core service by name
       - JAVA_SERVICE_URL=http://core-service:8080/api
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
     depends_on:
       - postgres
       - redis

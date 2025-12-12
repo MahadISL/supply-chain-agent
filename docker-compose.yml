@@ -70,6 +70,16 @@ services:
     networks:
       - sc_network
 
+  frontend:
+    build: ./frontend
+    container_name: sc_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - sc_network
+
 volumes:
   postgres_data:
 

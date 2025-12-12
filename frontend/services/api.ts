@@ -1,5 +1,5 @@
-const JAVA_API = 'http://localhost:8080/api';
-const AGENT_API = 'http://localhost:8000';
+const JAVA_API = 'http://100.28.218.207:8080/api';
+const AGENT_API = 'http://100.28.218.207:8000';
 
 export async function getProducts() {
   const res = await fetch(`${JAVA_API}/products`, { cache: 'no-store' });

@@ -16,7 +16,7 @@ PC_HOST = os.getenv("PINECONE_INDEX_HOST")
 try:
     embeddings = HuggingFaceInferenceAPIEmbeddings(
         api_key=HF_TOKEN,
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+        model_name="BAAI/bge-small-en-v1.5"
     )
     pc = Pinecone(api_key=PC_API_KEY)
     index = pc.Index(host=PC_HOST)

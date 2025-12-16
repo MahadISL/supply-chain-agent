@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-const ModelURL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
+const ModelURL = "https://api-inference.huggingface.co/models/BAAI/bge-small-en-v1.5"
 
 type Client struct {
 	Token string
@@ -17,9 +17,15 @@ func NewClient(token string) *Client {
 	return &Client{Token: token}
 }
 
-func (c *Client) GenerateEmbeddings(texts []string) ([][]float32, error) {
+// Payload structure to match HF API requirements strictly
+type HFPayload struct {
+	Inputs []string `json:"inputs"`
+}
 
-	jsonData, err := json.Marshal(texts)
+func (c *Client) GenerateEmbeddings(texts []string) ([][]float32, error) {
+	// Wrap inputs in a struct
+	payload := HFPayload{Inputs: texts}
+	jsonData, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +48,8 @@ func (c *Client) GenerateEmbeddings(texts []string) ([][]float32, error) {
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("HuggingFace API Error: %s", resp.Status)
 	}
-	
+
+	// Parse Response (List of List of Floats)
 	var embeddings [][]float32
 	if err := json.NewDecoder(resp.Body).Decode(&embeddings); err != nil {
 		return nil, err
